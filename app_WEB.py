@@ -19,7 +19,7 @@ stock_weights = {
     "TSLA": 0.024,
 }
 
-REFRESH_INTERVAL = 1  # 每幾秒自動刷新（雲端建議 ≥10s，避免過度請求）
+REFRESH_INTERVAL = 2  # 每幾秒自動刷新（雲端建議 ≥10s，避免過度請求）
 
 tickers = list(stock_weights.keys())
 
@@ -111,7 +111,7 @@ try:
     # 輸出
     st.dataframe(styled, height=350, use_container_width=True)
 
-    st.subheader("📊 前幾大合計比較")
+    #st.subheader("📊 前幾大合計比較")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -131,3 +131,4 @@ except Exception as e:
 
 # ── 自動刷新（真正可用的元件） ─────────────────────────────
 st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="auto_refresh")
+
