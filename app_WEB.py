@@ -81,7 +81,7 @@ try:
 
     # 建立表格 + 編號 1~n
     df = pd.DataFrame({
-        #"No.": range(1, len(ordered_tickers) + 1),
+        "No.": range(1, len(ordered_tickers) + 1),
         "Ticker": ordered_tickers,
         "Change%": [pct_change.get(t, float("nan")) for t in ordered_tickers],
         "Weight": [stock_weights[t] for t in ordered_tickers],
@@ -131,3 +131,4 @@ except Exception as e:
 
 # ── 自動刷新（真正可用的元件） ─────────────────────────────
 st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="auto_refresh")
+
