@@ -111,7 +111,7 @@ try:
     # 輸出
     st.dataframe(styled, height=350, use_container_width=True)
 
-    st.subheader("📊 前幾大合計比較")
+    #st.subheader("📊 前幾大合計比較")
     col1, col2 = st.columns(2)
 
     with col1:
