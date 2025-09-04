@@ -71,38 +71,6 @@ def weighted_sum(df, n):
     sub = df.head(n)
     return (sub["Change%"] * sub["Weight"]).sum(skipna=True) / sub["Weight"].sum()
 
-# ── 自訂 CSS（加權/未加權左右排版 + 手機縮小） ─────────────
-st.markdown("""
-<style>
-.container {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.block-container {
-  padding-top: 1rem;
-}
-
-h2 {
-  font-size: 22px;
-  margin-bottom: 10px;
-  color: white;
-}
-
-/* 手機直立：縮小比例而不是上下排列 */
-@media (max-width: 600px) {
-  .container {
-    transform: scale(0.85);
-    transform-origin: top left;
-  }
-  h2 { font-size: 14px; }
-  td, th { font-size: 10px; }
-}
-</style>
-""", unsafe_allow_html=True)
-
 # ── 主流程（每次頁面重新執行一次） ─────────────────────────
 try:
     pct_change = get_pct_change(tickers)
