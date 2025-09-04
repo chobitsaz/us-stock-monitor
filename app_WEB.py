@@ -81,7 +81,7 @@ try:
 
     # 建立表格 + 編號 1~n
     df = pd.DataFrame({
-        #"No.": range(1, len(ordered_tickers) + 1),
+        "No.": range(1, len(ordered_tickers) + 1),
         "Ticker": ordered_tickers,
         "Change%": [pct_change.get(t, float("nan")) for t in ordered_tickers],
         "Weight": [stock_weights[t] for t in ordered_tickers],
@@ -109,9 +109,9 @@ try:
     wsum3, wsum5, wsum8 = weighted_sum(df, 3), weighted_sum(df, 5), weighted_sum(df, 8)
 
     # 輸出
-    st.dataframe(styled, height=250, use_container_width=True)
+    st.dataframe(styled, height=350, use_container_width=True)
 
-    #st.subheader("📊 前幾大合計比較")
+    st.subheader("📊 前幾大合計比較")
     col1, col2 = st.columns(2)
 
     with col1:
