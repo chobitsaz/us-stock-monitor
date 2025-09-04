@@ -71,6 +71,38 @@ def weighted_sum(df, n):
     sub = df.head(n)
     return (sub["Change%"] * sub["Weight"]).sum(skipna=True) / sub["Weight"].sum()
 
+# ── 自訂 CSS（加權/未加權左右排版 + 手機縮小） ─────────────
+st.markdown("""
+<style>
+.container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.block-container {
+  padding-top: 1rem;
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: white;
+}
+
+/* 手機直立：縮小比例而不是上下排列 */
+@media (max-width: 600px) {
+  .container {
+    transform: scale(0.85);
+    transform-origin: top left;
+  }
+  h2 { font-size: 14px; }
+  td, th { font-size: 10px; }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── 主流程（每次頁面重新執行一次） ─────────────────────────
 try:
     pct_change = get_pct_change(tickers)
@@ -81,7 +113,7 @@ try:
 
     # 建立表格 + 編號 1~n
     df = pd.DataFrame({
-        "No.": range(1, len(ordered_tickers) + 1),
+        #"No.": range(1, len(ordered_tickers) + 1),
         "Ticker": ordered_tickers,
         "Change%": [pct_change.get(t, float("nan")) for t in ordered_tickers],
         "Weight": [stock_weights[t] for t in ordered_tickers],
@@ -109,7 +141,7 @@ try:
     wsum3, wsum5, wsum8 = weighted_sum(df, 3), weighted_sum(df, 5), weighted_sum(df, 8)
 
     # 輸出
-    st.dataframe(styled, height=350, use_container_width=True)
+    st.dataframe(styled, height=250, use_container_width=True)
 
     #st.subheader("📊 前幾大合計比較")
     col1, col2 = st.columns(2)
@@ -131,4 +163,3 @@ except Exception as e:
 
 # ── 自動刷新（真正可用的元件） ─────────────────────────────
 st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="auto_refresh")
-
