@@ -131,4 +131,3 @@ except Exception as e:
 
 # ── 自動刷新（真正可用的元件） ─────────────────────────────
 st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="auto_refresh")
-
