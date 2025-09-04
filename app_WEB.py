@@ -19,7 +19,7 @@ stock_weights = {
     "TSLA": 0.024,
 }
 
-REFRESH_INTERVAL = 2  # 每幾秒自動刷新（雲端建議 ≥10s，避免過度請求）
+REFRESH_INTERVAL = 3  # 每幾秒自動刷新（雲端建議 ≥10s，避免過度請求）
 
 tickers = list(stock_weights.keys())
 
@@ -113,7 +113,7 @@ try:
 
     # 建立表格 + 編號 1~n
     df = pd.DataFrame({
-        "No.": range(1, len(ordered_tickers) + 1),
+        #"No.": range(1, len(ordered_tickers) + 1),
         "Ticker": ordered_tickers,
         "Change%": [pct_change.get(t, float("nan")) for t in ordered_tickers],
         "Weight": [stock_weights[t] for t in ordered_tickers],
@@ -128,7 +128,7 @@ try:
               {"selector": "th", "props": [("color", "white"), ("font-weight", "bold"),
                                            ("background-color", "#333"), ("font-size", "16px")]},
           ])
-          .applymap(lambda _: "color: white; font-weight: bold; font-size: 16px;", subset=["No."])
+          #.applymap(lambda _: "color: white; font-weight: bold; font-size: 16px;", subset=["No."])
           .applymap(lambda _: "font-size: 18px; font-weight: bold;", subset=["Ticker"])
     )
 
