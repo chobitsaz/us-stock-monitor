@@ -4,10 +4,10 @@ import pandas as pd
 from streamlit_autorefresh import st_autorefresh
 
 # ── 基本設定 ─────────────────────────────────────────────
-st.set_page_config(page_title="美股前8大即時漲跌幅（依權重）", layout="wide")
-st.title("📈 NQ前8大即時")
+st.set_page_config(page_title="美股前8大漲跌幅", layout="wide")
+st.title("📈 NQ前8大漲跌幅")
 
-# 股票清單 + 權重（僅用來排序；未加權合計不使用權重）
+# 股票清單 + 權重
 stock_weights = {
     "MSFT": 0.115,
     "AAPL": 0.105,
@@ -18,37 +18,49 @@ stock_weights = {
     "AVGO": 0.049,
     "TSLA": 0.024,
 }
-
-REFRESH_INTERVAL = 3  # 每幾秒自動刷新（雲端建議 ≥10s，避免過度請求）
-
 tickers = list(stock_weights.keys())
 
-# ── 抓取漲跌幅 ────────────────────────────────────────────
-def get_pct_change(tickers):
-    # 1m 最新價
+REFRESH_INTERVAL = 3  # 秒
+
+# ── Sidebar 選擇模式 ─────────────────────────────────────
+mode = st.sidebar.radio("選擇模式", ["盤中", "盤前"], index=0)
+
+# ── 抓取盤中漲跌幅 ──────────────────────────────────────
+def get_pct_change_intraday(tickers):
     df_1m = yf.download(tickers, period="1d", interval="1m", progress=False, threads=True)
     last = None
     if not df_1m.empty:
         try:
-            last = df_1m["Close"].iloc[-1]        # 多檔→Series
+            last = df_1m["Close"].iloc[-1]
         except KeyError:
-            last = df_1m["Adj Close"].iloc[-1]    # 備援
+            last = df_1m["Adj Close"].iloc[-1]
 
-    # 前一交易日收盤
     df_daily = yf.download(tickers, period="2d", interval="1d", progress=False, threads=True)
     try:
         prev_close = df_daily["Close"].iloc[-2]
     except IndexError:
         prev_close = df_daily["Close"].iloc[-1]
 
-    # 週末/收盤後取不到1m時，退回當日收盤（顯示 0%）
     if last is None or (hasattr(last, "isna") and last.isna().all()):
         last = df_daily["Close"].iloc[-1]
 
     pct = (last - prev_close) / prev_close * 100
     return pct
 
-# ── 樣式：漲跌幅底色 + 最大漲幅字體更大 ──────────────────────
+# ── 抓取盤前漲跌幅 ──────────────────────────────────────
+def get_pct_change_premarket(tickers):
+    pct_dict = {}
+    for t in tickers:
+        info = yf.Ticker(t).fast_info
+        try:
+            last = info.last_price
+            prev_close = info.previous_close
+            pct_dict[t] = (last - prev_close) / prev_close * 100 if prev_close else float("nan")
+        except Exception:
+            pct_dict[t] = float("nan")
+    return pd.Series(pct_dict)
+
+# ── 樣式 ───────────────────────────────────────────────
 def style_change(col: pd.Series):
     maxv = col.max(skipna=True)
     out = []
@@ -58,28 +70,30 @@ def style_change(col: pd.Series):
             continue
         style = "color: black; font-weight: bold; font-size: 18px;"
         if v > 0:
-            style += "background-color: #ffd6e7;"   # 粉紅
+            style += "background-color: #ffd6e7;"
         elif v < 0:
-            style += "background-color: #d6f5d6;"   # 淺綠
+            style += "background-color: #d6f5d6;"
         if v == maxv:
-            style += " font-size: 22px;"            # 漲幅最大再加大
+            style += " font-size: 22px;"
         out.append(style)
     return out
 
-# ── 加權平均（用你提供的權重） ─────────────────────────────
 def weighted_sum(df, n):
     sub = df.head(n)
     return (sub["Change%"] * sub["Weight"]).sum(skipna=True) / sub["Weight"].sum()
 
-# ── 主流程（每次頁面重新執行一次） ─────────────────────────
+# ── 主流程 ──────────────────────────────────────────────
 try:
-    pct_change = get_pct_change(tickers)
+    if mode == "盤中":
+        pct_change = get_pct_change_intraday(tickers)
+    else:
+        pct_change = get_pct_change_premarket(tickers)
 
-    # 依權重排序（大→小）
+    # 排序
     ordered = sorted(stock_weights.items(), key=lambda x: x[1], reverse=True)
     ordered_tickers = [t for t, _ in ordered]
 
-    # 建立表格 + 編號 1~n
+    # 建立表格
     df = pd.DataFrame({
         "No.": range(1, len(ordered_tickers) + 1),
         "Ticker": ordered_tickers,
@@ -87,16 +101,15 @@ try:
         "Weight": [stock_weights[t] for t in ordered_tickers],
     })
 
-    # 表格樣式（白色表頭、編號白字、股名字體較大）
     styled = (
         df.style
           .format({"Weight": "{:.2%}", "Change%": "{:.2f}%"})
           .apply(style_change, subset=["Change%"])
-          .set_table_styles([
-              {"selector": "th", "props": [("color", "white"), ("font-weight", "bold"),
-                                           ("background-color", "#333"), ("font-size", "16px")]},
-          ])
-          #.applymap(lambda _: "color: white; font-weight: bold; font-size: 16px;", subset=["No."])
+          .set_table_styles([{
+              "selector": "th",
+              "props": [("color", "white"), ("font-weight", "bold"),
+                        ("background-color", "#333"), ("font-size", "16px")]
+          }])
           .applymap(lambda _: "font-size: 18px; font-weight: bold;", subset=["Ticker"])
     )
 
@@ -111,23 +124,20 @@ try:
     # 輸出
     st.dataframe(styled, height=350, use_container_width=True)
 
-    #st.subheader("📊 前幾大合計比較")
     col1, col2 = st.columns(2)
-
     with col1:
         st.metric("前3大（未加權）",  f"{sum3:.2f}%")
         st.metric("前5大（未加權）",  f"{sum5:.2f}%")
         st.metric("前8大（未加權）",  f"{sum8:.2f}%")
-
     with col2:
         st.metric("前3大（加權）",  f"{wsum3:.2f}%")
         st.metric("前5大（加權）",  f"{wsum5:.2f}%")
         st.metric("前8大（加權）",  f"{wsum8:.2f}%")
 
-    st.caption(f"⏱ 每 {REFRESH_INTERVAL} 秒更新一次（資料源：Yahoo Finance；盤中可能有數十秒延遲）")
+    st.caption(f"⏱ {mode}模式，每 {REFRESH_INTERVAL} 秒更新一次（資料源：Yahoo Finance；盤中可能有延遲）")
 
 except Exception as e:
     st.error(f"取得資料時發生錯誤：{e}")
 
-# ── 自動刷新（真正可用的元件） ─────────────────────────────
+# 自動刷新
 st_autorefresh(interval=REFRESH_INTERVAL * 1000, key="auto_refresh")
